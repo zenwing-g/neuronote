@@ -67,24 +67,24 @@ def create_id():
             return new_id
 
 
-# Jinja2 JSON template for the neuron
-neu_template = """{
-    "neu_title": "{{ neu_title }}",
-    "neu_id": "{{ neu_id }}",
-    "neu_content": {{ neu_content | tojson }}
+# Jinja2 JSON template for the node
+node_template = """{
+    "node_title": "{{ node_title }}",
+    "node_id": "{{ node_id }}",
+    "node_content": {{ node_content | tojson }}
 }"""
 
-# User input for the neuron title, ID, and content
-neu_title = input(YELLOW + "Neuron Title:\n" + RESET)
+# User input for the node title, ID, and content
+node_title = input(YELLOW + "Node Title:\n" + RESET)
 data = {
-    "neu_title": neu_title,
-    "neu_id": create_id(),
-    "neu_content": input(YELLOW + "Give the content in Markdown format:\n" + RESET),
+    "node_title": node_title,
+    "node_id": create_id(),
+    "node_content": input(YELLOW + "Give the content in Markdown format:\n" + RESET),
 }
 
-# Sanitize the neu_title to make it a valid filename
+# Sanitize the node_title to make it a valid filename
 safe_title = re.sub(
-    r'[\\/*?:"<>|]', "_", neu_title
+    r'[\\/*?:"<>|]', "_", node_title
 )  # Replace invalid characters with "_"
 file_name = f"../storage/{brain}/{safe_title}.json"
 
@@ -93,7 +93,7 @@ if pathlib.Path(file_name).exists():
     overwrite_file = (
         input(
             YELLOW
-            + f"Neuron with the name '{neu_title}' already exists. Do you want to overwrite it? (y/n): "
+            + f"Node with the name '{node_title}' already exists. Do you want to overwrite it? (y/n): "
             + RESET
         )
         .strip()
@@ -104,11 +104,11 @@ if pathlib.Path(file_name).exists():
         exit()  # Exit if user doesn't want to overwrite
 
 # Render the template with user data
-template = jinja2.Template(neu_template)
+template = jinja2.Template(node_template)
 json_content = template.render(data)
 
 # Save the formatted JSON to a file
 with open(file_name, "w", encoding="utf-8") as file:
     file.write(json_content)
 
-print(GREEN + f"Neuron saved successfully as {file_name}" + RESET)
+print(GREEN + f"Node saved successfully as {file_name}" + RESET)
