@@ -60,7 +60,6 @@ page_template = """{
     "page_title": "{{ page_title }}",
     "page_id": "{{ page_id }}",
     "page_content": {{ page_content | tojson }},
-    "page_links": {{ page_links | tojson }}
 }"""
 
 # User input for the page title, ID, and content
@@ -72,29 +71,25 @@ page_path = pathlib.Path(f"../bag/{book}/{safe_title}.json")
 
 
 def write_page():
-    """Opens Neovim to edit content and returns the updated text."""
     temp_file = pathlib.Path(f"/tmp/{safe_title}.md")  # Temporary Markdown file
 
-    # If the page already exists, load its content into the temp file
     if page_path.exists():
         with page_path.open("r", encoding="utf-8") as file:
             existing_data = json.load(file)
             existing_content = existing_data.get("page_content", "")
 
         if existing_content is None:
-            existing_content = ""  # Ensure it is always a string
+            existing_content = ""
 
         with temp_file.open("w", encoding="utf-8") as temp:
-            temp.write(existing_content)  # Pre-fill with existing content
+            temp.write(existing_content)
 
-    # Open Neovim with the temporary file
     subprocess.run(["nvim", str(temp_file)])
 
-    # Read content after Neovim exits
     if temp_file.exists():
         with temp_file.open("r", encoding="utf-8") as file:
             content = file.read()
-        temp_file.unlink()  # Remove temporary file after reading
+        temp_file.unlink()
         return content
     else:
         print(RED + "Error: No content was saved!" + RESET)
@@ -105,7 +100,6 @@ data = {
     "page_title": page_title,
     "page_id": create_id(),
     "page_content": write_page(),  # Get existing content or new input
-    "page_links": [],
 }
 
 # Render the template with user data
