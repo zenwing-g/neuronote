@@ -1,4 +1,4 @@
-from colorama import init, Fore, Style  # black red green yellow blue magenta cyan white
+from colorama import init, Fore, Style
 import jinja2
 import json
 import random
@@ -7,10 +7,8 @@ import pathlib
 import re
 import subprocess
 
-# Initialize colorama
 init(autoreset=True)
 
-# Color settings
 GREEN = Fore.GREEN
 RED = Fore.RED
 YELLOW = Fore.YELLOW
@@ -19,11 +17,9 @@ MAGENTA = Fore.MAGENTA
 CYAN = Fore.CYAN
 RESET = Style.RESET_ALL
 
-# Book creation check
 book = input(BLUE + "Enter book name or create a new one:\n" + RESET)
 book_path = pathlib.Path(f"../bag/{book}")
 
-# Check if the book exists
 if book_path.exists() and book_path.is_dir():
     print(YELLOW + f"{book_path}" + RESET)
 else:
@@ -31,7 +27,6 @@ else:
     print(CYAN + f"{book_path} [New]" + RESET)
 
 
-# Check if an ID already exists
 def check_id(page_id):
     ids_path = pathlib.Path("ids.csv")
     if not ids_path.exists():
@@ -43,7 +38,6 @@ def check_id(page_id):
     return page_id in page_ids
 
 
-# Generate a unique 6-character ID
 def create_id():
     characters = string.ascii_lowercase + string.digits
 
@@ -55,23 +49,20 @@ def create_id():
             return new_id
 
 
-# Jinja2 JSON template for the page
 page_template = """{
     "page_title": "{{ page_title }}",
     "page_id": "{{ page_id }}",
-    "page_content": {{ page_content | tojson }},
+    "page_content": {{ page_content | tojson }}
 }"""
 
-# User input for the page title, ID, and content
 page_title = input(YELLOW + "Page Title:\n" + RESET)
 
-# Sanitize the page_title to make it a valid filename
 safe_title = re.sub(r'[\\/*?:"<>|]', "_", page_title)
 page_path = pathlib.Path(f"../bag/{book}/{safe_title}.json")
 
 
 def write_page():
-    temp_file = pathlib.Path(f"/tmp/{safe_title}.md")  # Temporary Markdown file
+    temp_file = pathlib.Path(f"/tmp/{safe_title}.md")
 
     if page_path.exists():
         with page_path.open("r", encoding="utf-8") as file:
@@ -96,17 +87,11 @@ def write_page():
         return ""
 
 
-data = {
-    "page_title": page_title,
-    "page_id": create_id(),
-    "page_content": write_page(),  # Get existing content or new input
-}
+data = {"page_title": page_title, "page_id": create_id(), "page_content": write_page()}
 
-# Render the template with user data
 template = jinja2.Template(page_template)
 json_content = template.render(data)
 
-# Save the formatted JSON to a page
 with page_path.open("w", encoding="utf-8") as file:
     file.write(json_content)
 
