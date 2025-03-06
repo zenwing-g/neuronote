@@ -1,0 +1,73 @@
+import os
+import sys
+import subprocess
+import time
+
+
+def run_command(command, silent=True):
+    """Runs a shell command silently in the background unless there's an error."""
+    stdout_dest = subprocess.DEVNULL if silent else None
+    stderr_dest = subprocess.DEVNULL if silent else None
+
+    result = subprocess.run(command, shell=True, stdout=stdout_dest, stderr=stderr_dest)
+    if result.returncode != 0:
+        print(f"\n❌ Error running command: {command}")
+        sys.exit(1)
+
+
+def progress_bar(task_name, duration=5):
+    """Displays a loading bar for the given task."""
+    bar_length = 50
+    print(f"{task_name} [", end="", flush=True)
+
+    for _ in range(bar_length):
+        time.sleep(duration / 100)  # Faster but still visible progress
+        print("=", end="", flush=True)
+
+    print("] ✔")  # End progress bar
+
+
+# Install system packages (Linux/macOS only)
+progress_bar("Installing system dependencies")
+run_command(
+    "sudo apt update && sudo apt install -y sqlite3 sqlitebrowser || true"
+)  # Ignore errors on Windows/macOS
+
+# Create virtual environment
+if not os.path.exists("venv"):
+    progress_bar("Creating virtual environment")
+    run_command("python -m venv venv")
+
+# Install Python dependencies inside venv silently
+progress_bar("Installing Python dependencies")
+run_command(
+    "venv/bin/python -m pip install --upgrade pip pyqt6 pyqtgraph markdown2 || venv\\Scripts\\python.exe -m pip install --upgrade pip pyqt6 pyqtgraph markdown2"
+)
+
+# Get the list of installed libraries
+installed_libraries = subprocess.run(
+    "venv/bin/python -m pip freeze || venv\\Scripts\\python.exe -m pip freeze",
+    shell=True,
+    capture_output=True,
+    text=True,
+).stdout.splitlines()
+
+# Print installed libraries
+print("\n✅ Installed Libraries:")
+for lib in installed_libraries:
+    print(f"  - {lib}")
+
+# Print virtual environment activation instructions
+print("\n✅ Setup complete! You can now start developing your note-taking app!")
+
+print(
+    "\n🔹 To activate the virtual environment, use the appropriate command for your OS:\n"
+)
+print("   **For Linux/macOS (bash/zsh)**:")
+print("     source venv/bin/activate\n")
+print("   **For Windows (Command Prompt - CMD)**:")
+print("     venv\\Scripts\\activate\n")
+print("   **For Windows (PowerShell)**:")
+print("     venv\\Scripts\\Activate.ps1\n")
+print("   **For Fish Shell**:")
+print("     source venv/bin/activate.fish\n")
