@@ -8,7 +8,7 @@ class MovableViewport(QWidget):
     def __init__(self):
         """Initialize the movable viewport with a centered dot grid."""
         super().__init__()
-        self.setWindowTitle("Draggable Viewport with Centered Origin")
+        self.setWindowTitle("Graph View")
 
         # Set the initial window size (you can adjust this)
         self.resize(800, 600)  # Width x Height
