@@ -17,8 +17,11 @@ MAGENTA = Fore.MAGENTA
 CYAN = Fore.CYAN
 RESET = Style.RESET_ALL
 
+# Storage base path
+STORAGE_PATH = pathlib.Path("../../storage")
+
 book = input(BLUE + "Enter book name or create a new one:\n" + RESET)
-book_path = pathlib.Path(f"../bag/{book}")
+book_path = STORAGE_PATH / "bag" / book
 
 if book_path.exists() and book_path.is_dir():
     print(YELLOW + f"{book_path}" + RESET)
@@ -28,7 +31,7 @@ else:
 
 
 def check_id(page_id):
-    ids_path = pathlib.Path("ids.csv")
+    ids_path = STORAGE_PATH / "data" / "ids.csv"
     if not ids_path.exists():
         ids_path.touch()
 
@@ -44,7 +47,9 @@ def create_id():
     while True:
         new_id = "".join(random.choices(characters, k=6))
         if not check_id(new_id):
-            with pathlib.Path("ids.csv").open("a", encoding="utf-8") as file:
+            with (STORAGE_PATH / "data" / "ids.csv").open(
+                "a", encoding="utf-8"
+            ) as file:
                 file.write(new_id + "\n")
             return new_id
 
@@ -58,7 +63,7 @@ page_template = """{
 page_title = input(YELLOW + "Page Title:\n" + RESET)
 
 safe_title = re.sub(r'[\\/*?:"<>|]', "_", page_title)
-page_path = pathlib.Path(f"../bag/{book}/{safe_title}.json")
+page_path = book_path / f"{safe_title}.json"
 
 
 def write_page():

@@ -1,135 +1,155 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget
-from PyQt6.QtGui import QPainter, QPen, QBrush
-from PyQt6.QtCore import Qt, QPoint, QPointF
+from PyQt6.QtWidgets import (
+    QApplication,
+    QWidget,
+    QPushButton,
+    QLabel,
+    QVBoxLayout,
+    QHBoxLayout,
+    QSpacerItem,
+    QSizePolicy,
+)
+from PyQt6.QtCore import QPropertyAnimation, Qt, QPoint, QPointF, QTimer, QRect
+from PyQt6.QtGui import QPainter, QBrush
 
 
 class MovableViewport(QWidget):
     def __init__(self):
-        """Initialize the movable viewport with a centered dot grid."""
+        """Initialize the movable viewport with a centered dot grid and navigation bar."""
         super().__init__()
         self.setWindowTitle("Graph View")
+        self.resize(800, 600)
+        self.setMouseTracking(True)
 
-        # Set the initial window size (you can adjust this)
-        self.resize(800, 600)  # Width x Height
+        # Navigation bar setup
+        self.navbar = QWidget(self)
+        self.navbar.setStyleSheet("background-color: rgb(50, 50, 50);")  # Fully opaque
+        self.navbar.setFixedHeight(50)
+        self.navbar.setGeometry(0, -50, self.width(), 50)
 
-        # Center the window on the screen
-        screen_geometry = QApplication.primaryScreen().availableGeometry()
-        window_geometry = self.frameGeometry()
+        # Navigation bar layout
+        navbar_layout = QHBoxLayout()
+        navbar_layout.setContentsMargins(10, 0, 10, 0)
+        self.navbar.setLayout(navbar_layout)
 
-        center_x = (screen_geometry.width() - window_geometry.width()) // 2
-        center_y = (screen_geometry.height() - window_geometry.height()) // 2
-        self.move(center_x, center_y)  # Move the window to the center
+        # Back button
+        self.back_button = QPushButton("⬅", self.navbar)
+        self.back_button.setFixedSize(40, 40)
+        navbar_layout.addWidget(self.back_button)
+
+        # Spacer to push title to the center
+        navbar_layout.addStretch()
+
+        # Title label
+        self.title_label = QLabel("Graph View", self.navbar)
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setStyleSheet("color: white; font-size: 16px;")
+        navbar_layout.addWidget(self.title_label)
+
+        # Spacer to push the new page button to the right
+        navbar_layout.addStretch()
+
+        # New Page button
+        self.new_page_button = QPushButton("New Label", self.navbar)
+        navbar_layout.addWidget(self.new_page_button)
+
+        # Timer to auto-hide navbar
+        self.navbar_timer = QTimer()
+        self.navbar_timer.setInterval(1000)
+        self.navbar_timer.timeout.connect(self.hide_navbar)
+
+        # Animation setup
+        self.navbar_animation = QPropertyAnimation(self.navbar, b"geometry")
+        self.navbar_animation.setDuration(200)
 
         # Variables for viewport movement
-        self.dragging = False  # Tracks if the user is dragging
-        self.last_mouse_pos = QPoint()  # Stores last mouse position
+        self.dragging = False
+        self.last_mouse_pos = QPoint()
 
-        # Grid settings (dots)
-        self.min_spacing = 40  # Minimum distance between dots (px)
-        self.max_spacing = 70  # Maximum distance between dots (px)
-        self.grid_spacing = 50  # Default dot spacing (adjustable via scrolling)
-        self.zoom_step = 1  # Change in spacing per scroll step
-        self.dot_radius = 1  # Fixed dot radius (dots remain same size)
+        # Grid settings
+        self.min_spacing = 40
+        self.max_spacing = 70
+        self.grid_spacing = 50
+        self.zoom_step = 1
+        self.dot_radius = 1
 
-        # Set the canvas size and center the viewport
         self.update_canvas_size()
-        self.center_viewport()  # Move viewport so (0,0) is at the window center
+        self.center_viewport()
 
     def update_canvas_size(self):
-        """Update the canvas size dynamically based on the window size.
-        The canvas is always 10× larger than the current window.
-        """
+        """Update the canvas size dynamically based on the window size."""
         self.canvas_size = 10 * min(self.width(), self.height())
 
     def center_viewport(self):
-        """Centers the viewport so (0,0) aligns with the middle of the window."""
+        """Center the viewport so (0,0) aligns with the middle of the window."""
         self.offset = QPointF(
-            self.canvas_size / 2 - self.width() / 2,  # Center horizontally
-            self.canvas_size / 2 - self.height() / 2,  # Center vertically
+            self.canvas_size / 2 - self.width() / 2,
+            self.canvas_size / 2 - self.height() / 2,
         )
 
     def paintEvent(self, event):
-        """Handles the drawing of the dot grid and background."""
         painter = QPainter(self)
-        painter.setRenderHint(
-            QPainter.RenderHint.Antialiasing
-        )  # Enable anti-aliasing for smooth rendering
-
-        # Fill the background with black
         painter.fillRect(self.rect(), Qt.GlobalColor.black)
-
-        # Set dot color (white dots on black background)
-        painter.setPen(
-            QPen(Qt.GlobalColor.black, 1)
-        )  # Border color (not used for dots)
-        painter.setBrush(QBrush(Qt.GlobalColor.white))  # Fill color for dots
-
-        # Loop through the entire large canvas and draw dots at every grid point
+        painter.setBrush(QBrush(Qt.GlobalColor.white))
         for x in range(0, self.canvas_size, self.grid_spacing):
             for y in range(0, self.canvas_size, self.grid_spacing):
-                # Calculate where the dot should be drawn relative to the viewport offset
                 screen_x = x - self.offset.x()
                 screen_y = y - self.offset.y()
-
-                # Only draw dots that are within the visible part of the window
                 if 0 <= screen_x <= self.width() and 0 <= screen_y <= self.height():
                     painter.drawEllipse(
                         int(screen_x),
                         int(screen_y),
-                        self.dot_radius * 2,  # Dot width (2× radius)
-                        self.dot_radius * 2,  # Dot height (2× radius)
+                        self.dot_radius * 2,
+                        self.dot_radius * 2,
                     )
 
+    def mouseMoveEvent(self, event):
+        """Show navbar when mouse moves near the top on hover."""
+        if event.pos().y() < 20:
+            self.show_navbar()
+        if self.dragging:
+            delta = event.pos() - self.last_mouse_pos
+            self.offset -= QPointF(delta.x(), delta.y())
+            self.last_mouse_pos = event.pos()
+            self.update()
+
     def mousePressEvent(self, event):
-        """Detect when the user starts dragging the viewport."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = True
-            self.last_mouse_pos = (
-                event.pos()
-            )  # Store the starting position of the mouse
-
-    def mouseMoveEvent(self, event):
-        """Handles dragging (panning) of the viewport when the user moves the mouse."""
-        if self.dragging:
-            # Calculate how much the mouse has moved since the last update
-            delta = event.pos() - self.last_mouse_pos
-
-            # Adjust the viewport offset based on the mouse movement
-            self.offset -= QPointF(delta.x(), delta.y())
-
-            # Prevent scrolling beyond the boundaries of the large canvas
-            max_x = self.canvas_size - self.width()  # Max right movement
-            max_y = self.canvas_size - self.height()  # Max bottom movement
-            self.offset.setX(max(0, min(self.offset.x(), max_x)))
-            self.offset.setY(max(0, min(self.offset.y(), max_y)))
-
-            # Update the last known mouse position
             self.last_mouse_pos = event.pos()
-            self.update()  # Redraw the screen with the new offset
 
     def mouseReleaseEvent(self, event):
-        """Stops dragging when the user releases the left mouse button."""
         if event.button() == Qt.MouseButton.LeftButton:
-            self.dragging = False  # Stop panning
+            self.dragging = False
 
     def wheelEvent(self, event):
-        """Adjust the spacing between dots when the user scrolls."""
-        angle = event.angleDelta().y()  # Get scroll direction
+        angle = event.angleDelta().y()
         new_spacing = self.grid_spacing + (
             self.zoom_step if angle > 0 else -self.zoom_step
         )
-
-        # Ensure that spacing stays within the allowed range (40px to 70px)
         if self.min_spacing <= new_spacing <= self.max_spacing:
-            self.grid_spacing = new_spacing  # Update spacing
-            self.update()  # Redraw the screen with the new spacing
+            self.grid_spacing = new_spacing
+            self.update()
 
     def resizeEvent(self, event):
-        """Updates the canvas size dynamically when the window is resized."""
         self.update_canvas_size()
-        self.center_viewport()  # Recenter viewport when window is resized
-        self.update()  # Redraw the dots to fit the new window size
+        self.center_viewport()
+        self.navbar.setGeometry(0, -50, self.width(), 50)
+        self.update()
+
+    def show_navbar(self):
+        """Slide down the navbar with animation."""
+        self.navbar_animation.setStartValue(QRect(0, -50, self.width(), 50))
+        self.navbar_animation.setEndValue(QRect(0, 0, self.width(), 50))
+        self.navbar_animation.start()
+        self.navbar_timer.start()
+
+    def hide_navbar(self):
+        """Slide up the navbar with animation."""
+        self.navbar_animation.setStartValue(QRect(0, 0, self.width(), 50))
+        self.navbar_animation.setEndValue(QRect(0, -50, self.width(), 50))
+        self.navbar_animation.start()
+        self.navbar_timer.stop()
 
 
 if __name__ == "__main__":
