@@ -33,9 +33,9 @@ class MovableViewport(QWidget):
         self.navbar.setLayout(navbar_layout)
 
         # Back button for navigation
-        self.back_button = QPushButton("⬅", self.navbar)
-        self.back_button.setFixedSize(40, 40)
-        self.back_button.setStyleSheet("font-size: 24px;")
+        self.back_button = QPushButton("Back", self.navbar)
+        self.back_button.setFixedSize(80, 40)
+        self.back_button.setStyleSheet("font-size: 16px;")
         navbar_layout.addWidget(self.back_button)
         navbar_layout.addStretch()
 
@@ -98,7 +98,7 @@ class MovableViewport(QWidget):
         painter.fillRect(self.rect(), QBrush(Qt.GlobalColor.black))
 
         # Draw grid dots in white
-        painter.setPen(Qt.GlobalColor.white)
+        painter.setPen(Qt.GlobalColor.darkGray)
         start_x = int(-self.offset.x() % self.grid_spacing)
         start_y = int(-self.offset.y() % self.grid_spacing)
         for x in range(start_x, self.width(), self.grid_spacing):
