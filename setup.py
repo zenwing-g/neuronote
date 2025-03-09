@@ -3,6 +3,10 @@ import sys
 import subprocess
 import time
 
+GREEN = "\033[92m"
+RED = "\033[91m"
+RESET = "\033[0m"
+
 
 def run_command(command, silent=True):
     """Runs a shell command silently in the background unless there's an error."""
@@ -11,7 +15,7 @@ def run_command(command, silent=True):
 
     result = subprocess.run(command, shell=True, stdout=stdout_dest, stderr=stderr_dest)
     if result.returncode != 0:
-        print(f"\n❌ Error running command: {command}")
+        print(f"\n{RED}Error running command: {command}{RESET}")
         sys.exit(1)
 
 
@@ -24,7 +28,7 @@ def progress_bar(task_name, duration=5):
         time.sleep(duration / 100)  # Faster but still visible progress
         print("=", end="", flush=True)
 
-    print("] ✔")  # End progress bar
+    print(f"] {GREEN}Success{RESET}")  # End progress bar
 
 
 # Create virtual environment
@@ -47,21 +51,23 @@ installed_libraries = subprocess.run(
 ).stdout.splitlines()
 
 # Print installed libraries
-print("\n✅ Installed Libraries:")
+print(f"\n{GREEN}Installed Libraries:{RESET}")
 for lib in installed_libraries:
     print(f"  - {lib}")
 
 # Print virtual environment activation instructions
-print("\n✅ Setup complete! You can now start developing your note-taking app!")
+print(
+    f"\n{GREEN}Setup complete! You can now start developing your note-taking app!{RESET}"
+)
 
 print(
-    "\n🔹 To activate the virtual environment, use the appropriate command for your OS:\n"
+    "\nTo activate the virtual environment, use the appropriate command for your OS:\n"
 )
-print("   **For Linux/macOS (bash/zsh)**:")
+print("   For Linux/macOS (bash/zsh):")
 print("     source venv/bin/activate\n")
-print("   **For Windows (Command Prompt - CMD)**:")
+print("   For Windows (Command Prompt - CMD):")
 print("     venv\\Scripts\\activate\n")
-print("   **For Windows (PowerShell)**:")
+print("   For Windows (PowerShell):")
 print("     venv\\Scripts\\Activate.ps1\n")
-print("   **For Fish Shell**:")
+print("   For Fish Shell:")
 print("     source venv/bin/activate.fish\n")
