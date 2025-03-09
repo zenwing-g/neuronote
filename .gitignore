@@ -1,5 +1,3 @@
 venv/
-CMakeLists.txt
-bag/
-codes/ids.csv
-codes/links.csv
+storage/bag/
+storage/data/ids.csv
