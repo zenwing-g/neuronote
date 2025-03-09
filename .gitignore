@@ -1,3 +1,3 @@
-venv/
-storage/bag/
-storage/data/ids.csv
+../neuronote/venv/
+../neuronote/storage/data/ids.csv
+../neuronote/storage/data/links.csv

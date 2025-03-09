@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
 )
 from PyQt6.QtCore import QPropertyAnimation, Qt, QPoint, QPointF, QTimer, QRect
-from PyQt6.QtGui import QPainter, QBrush
+from PyQt6.QtGui import QPainter, QBrush, QPen, QFont
 
 
 class MovableViewport(QWidget):
@@ -34,18 +34,18 @@ class MovableViewport(QWidget):
         self.back_button = QPushButton("Back", self.navbar)
         self.back_button.setFixedSize(80, 40)
         self.back_button.setStyleSheet("font-size: 16px;")
-        self.back_button.clicked.connect(self.go_back)  # Connect back button
+        self.back_button.clicked.connect(self.go_back)
         navbar_layout.addWidget(self.back_button)
         navbar_layout.addStretch()
 
         # Title label in the navbar
-        self.title_label = QLabel("Book_name_placeholder", self.navbar)
+        self.title_label = QLabel("Graph View", self.navbar)
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title_label.setStyleSheet("color: white; font-size: 16px;")
         navbar_layout.addWidget(self.title_label)
         navbar_layout.addStretch()
 
-        # Button to create a new label/page
+        # "New Label" Button
         self.new_page_button = QPushButton("New Label", self.navbar)
         self.new_page_button.setFixedSize(100, 40)
         self.new_page_button.setStyleSheet(
@@ -55,90 +55,97 @@ class MovableViewport(QWidget):
 
         # Timer to hide navbar after inactivity
         self.navbar_timer = QTimer()
-        self.navbar_timer.setInterval(1000)  # 1-second delay
+        self.navbar_timer.setInterval(2000)  # 2 seconds delay before hiding
         self.navbar_timer.timeout.connect(self.hide_navbar)
 
         # Animation for showing/hiding navbar
         self.navbar_animation = QPropertyAnimation(self.navbar, b"geometry")
-        self.navbar_animation.setDuration(200)  # Animation speed
+        self.navbar_animation.setDuration(200)  # Smooth animation
 
         # Variables for mouse panning
         self.dragging = False
         self.last_mouse_pos = QPoint()
 
-        # Grid settings for background dots
+        # Grid settings
         self.min_spacing = 40
         self.max_spacing = 70
         self.grid_spacing = 50
-        self.zoom_step = 1
-        self.dot_radius = 1
+        self.zoom_step = 5
 
         # Initialize viewport properties
-        self.update_canvas_size()
-        self.center_viewport()
+        self.offset = QPointF(0, 0)
 
     def go_back(self):
         """Closes the current window and runs start_view.py"""
-        subprocess.Popen(["python3", "start_view.py"])  # Run start_view.py
-        self.close()  # Close the current window
+        subprocess.Popen(["python3", "start_view.py"])
+        self.close()
 
-    def update_canvas_size(self):
-        """Updates the canvas size based on the window dimensions."""
-        self.canvas_size = 10 * min(self.width(), self.height())
+    def show_navbar(self):
+        """Animates the navbar to slide down when mouse is near the top."""
+        self.navbar_animation.stop()
+        self.navbar_animation.setStartValue(QRect(0, -50, self.width(), 50))
+        self.navbar_animation.setEndValue(QRect(0, 0, self.width(), 50))
+        self.navbar_animation.start()
+        self.navbar_timer.start()  # Start hide timer
 
-    def center_viewport(self):
-        """Centers the viewport at the middle of the canvas."""
-        self.offset = QPointF(
-            self.canvas_size / 2 - self.width() / 2,
-            self.canvas_size / 2 - self.height() / 2,
-        )
+    def hide_navbar(self):
+        """Animates the navbar to slide back up after inactivity."""
+        if not self.navbar.underMouse():
+            self.navbar_animation.stop()
+            self.navbar_animation.setStartValue(QRect(0, 0, self.width(), 50))
+            self.navbar_animation.setEndValue(QRect(0, -50, self.width(), 50))
+            self.navbar_animation.start()
+            self.navbar_timer.stop()
 
     def paintEvent(self, event):
-        """Handles painting the grid dots and background."""
+        """Handles painting the grid dots and the center dot."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Set black background
         painter.fillRect(self.rect(), QBrush(Qt.GlobalColor.black))
 
-        # Draw grid dots in white
-        painter.setPen(Qt.GlobalColor.darkGray)
-        start_x = int(-self.offset.x() % self.grid_spacing)
-        start_y = int(-self.offset.y() % self.grid_spacing)
+        # Calculate center of graph (dynamic with panning)
+        center_x = self.width() // 2 + int(self.offset.x())
+        center_y = self.height() // 2 + int(self.offset.y())
+
+        # Grid dot color (dark gray)
+        dot_pen = QPen(Qt.GlobalColor.darkGray)
+        dot_pen.setWidth(1)  # 1-pixel wide dots
+        painter.setPen(dot_pen)
+
+        # Start positions based on panning
+        start_x = (center_x % self.grid_spacing) - self.grid_spacing
+        start_y = (center_y % self.grid_spacing) - self.grid_spacing
+
         for x in range(start_x, self.width(), self.grid_spacing):
             for y in range(start_y, self.height(), self.grid_spacing):
-                painter.drawEllipse(QPoint(x, y), self.dot_radius, self.dot_radius)
+                if x == center_x and y == center_y:
+                    continue  # Don't draw center dot here, we'll draw it separately
+                painter.drawPoint(QPoint(x, y))  # 1-pixel dot
 
-    def enterEvent(self, event):
-        """Enables mouse tracking when the cursor enters the window."""
-        self.setMouseTracking(True)
+        # Draw center dot (2px white)
+        center_dot_pen = QPen(Qt.GlobalColor.white)
+        center_dot_pen.setWidth(2)  # 2px wide center dot
+        painter.setPen(center_dot_pen)
+        painter.drawPoint(QPoint(center_x, center_y))
 
-    def leaveEvent(self, event):
-        """Starts the navbar hide timer when the cursor leaves the window."""
-        self.navbar_timer.start()
-
-    def show_navbar(self, event=None):
-        """Animates the navbar to slide into view."""
-        self.navbar_animation.setStartValue(QRect(0, -50, self.width(), 50))
-        self.navbar_animation.setEndValue(QRect(0, 0, self.width(), 50))
-        self.navbar_animation.start()
-        self.navbar_timer.stop()
-
-    def hide_navbar(self):
-        """Animates the navbar to slide out of view."""
-        if not self.navbar.underMouse():
-            self.navbar_animation.setStartValue(QRect(0, 0, self.width(), 50))
-            self.navbar_animation.setEndValue(QRect(0, -50, self.width(), 50))
-            self.navbar_animation.start()
-            self.navbar_timer.stop()
+        # Draw (0x0) label under the center dot
+        font = QFont()
+        font.setPixelSize(8)
+        painter.setFont(font)
+        painter.drawText(center_x - 10, center_y + 12, "(0x0)")
 
     def mouseMoveEvent(self, event):
-        """Handles mouse movement for dragging and showing the navbar."""
-        if event.pos().y() < 20 or self.navbar.underMouse():
+        """Handles mouse dragging to pan the graph and navbar hover detection."""
+        if (
+            event.pos().y() < 20 or self.navbar.underMouse()
+        ):  # Show navbar when near top
             self.show_navbar()
+
         if self.dragging:
             delta = event.pos() - self.last_mouse_pos
-            self.offset -= QPointF(delta.x(), delta.y())
+            self.offset += QPointF(delta.x(), delta.y())
             self.last_mouse_pos = event.pos()
             self.update()
 
@@ -163,15 +170,8 @@ class MovableViewport(QWidget):
             self.grid_spacing = new_spacing
             self.update()
 
-    def resizeEvent(self, event):
-        """Adjusts viewport settings when the window is resized."""
-        self.update_canvas_size()
-        self.center_viewport()
-        self.navbar.setGeometry(0, -50, self.width(), 50)
-        self.update()
 
-
-# Entry point for the application.
+# Entry point
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MovableViewport()
