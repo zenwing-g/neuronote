@@ -19,33 +19,35 @@ class MovableViewport(QWidget):
         self.resize(800, 600)
         self.setMouseTracking(True)
 
-        # Create and configure the navigation bar.
+        # Navbar starts hidden and appears when the mouse moves near the top
         self.navbar = QWidget(self)
         self.navbar.setStyleSheet("background-color: rgb(50, 50, 50);")
         self.navbar.setFixedHeight(50)
-        self.navbar.setGeometry(0, -50, self.width(), 50)  # Initially hidden
+        self.navbar.setGeometry(
+            0, -50, self.width(), 50
+        )  # Initially hidden above the viewport
 
-        # Layout for the navbar
+        # Layout for the navbar (horizontal arrangement for buttons and title)
         navbar_layout = QHBoxLayout()
         navbar_layout.setContentsMargins(10, 0, 10, 0)
         self.navbar.setLayout(navbar_layout)
 
-        # Back button for navigation
+        # Back button on the left side of the navbar
         self.back_button = QPushButton("Back", self.navbar)
         self.back_button.setFixedSize(80, 40)
         self.back_button.setStyleSheet("font-size: 16px;")
         self.back_button.clicked.connect(self.go_back)
         navbar_layout.addWidget(self.back_button)
-        navbar_layout.addStretch()
+        navbar_layout.addStretch()  # Adds spacing between elements
 
-        # Title label in the navbar
+        # Title label in the center of the navbar
         self.title_label = QLabel("Graph View", self.navbar)
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title_label.setStyleSheet("color: white; font-size: 16px;")
         navbar_layout.addWidget(self.title_label)
         navbar_layout.addStretch()
 
-        # "New Label" Button
+        # "New Label" button on the right side of the navbar
         self.new_page_button = QPushButton("New Label", self.navbar)
         self.new_page_button.setFixedSize(100, 40)
         self.new_page_button.setStyleSheet(
@@ -53,16 +55,16 @@ class MovableViewport(QWidget):
         )
         navbar_layout.addWidget(self.new_page_button)
 
-        # Timer to hide navbar after inactivity
+        # Timer to hide navbar after 2 seconds of inactivity
         self.navbar_timer = QTimer()
-        self.navbar_timer.setInterval(2000)  # 2 seconds delay before hiding
+        self.navbar_timer.setInterval(2000)
         self.navbar_timer.timeout.connect(self.hide_navbar)
 
-        # Animation for showing/hiding navbar
+        # Smooth animation for navbar sliding in and out
         self.navbar_animation = QPropertyAnimation(self.navbar, b"geometry")
-        self.navbar_animation.setDuration(200)  # Smooth animation
+        self.navbar_animation.setDuration(200)
 
-        # Variables for mouse panning
+        # Variables for tracking mouse panning
         self.dragging = False
         self.last_mouse_pos = QPoint()
 
@@ -72,24 +74,24 @@ class MovableViewport(QWidget):
         self.grid_spacing = 50
         self.zoom_step = 5
 
-        # Initialize viewport properties
+        # Offset determines the current pan position of the viewport
         self.offset = QPointF(0, 0)
 
     def go_back(self):
-        """Closes the current window and runs start_view.py"""
+        # Closes the current window and starts start_view.py
         subprocess.Popen(["python3", "start_view.py"])
         self.close()
 
     def show_navbar(self):
-        """Animates the navbar to slide down when mouse is near the top."""
+        # Moves the navbar down into view when activated
         self.navbar_animation.stop()
         self.navbar_animation.setStartValue(QRect(0, -50, self.width(), 50))
         self.navbar_animation.setEndValue(QRect(0, 0, self.width(), 50))
         self.navbar_animation.start()
-        self.navbar_timer.start()  # Start hide timer
+        self.navbar_timer.start()  # Restart the timer to hide it later
 
     def hide_navbar(self):
-        """Animates the navbar to slide back up after inactivity."""
+        # Moves the navbar back up if the mouse isn't over it
         if not self.navbar.underMouse():
             self.navbar_animation.stop()
             self.navbar_animation.setStartValue(QRect(0, 0, self.width(), 50))
@@ -98,49 +100,48 @@ class MovableViewport(QWidget):
             self.navbar_timer.stop()
 
     def paintEvent(self, event):
-        """Handles painting the grid dots and the center dot."""
+        # Handles rendering of the graph with grid dots
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Set black background
+        # Fill the background with black
         painter.fillRect(self.rect(), QBrush(Qt.GlobalColor.black))
 
-        # Calculate center of graph (dynamic with panning)
+        # Calculate the center dot position based on current pan offset
         center_x = self.width() // 2 + int(self.offset.x())
         center_y = self.height() // 2 + int(self.offset.y())
 
-        # Grid dot color (dark gray)
+        # Set pen for regular grid dots (dark gray, 1px)
         dot_pen = QPen(Qt.GlobalColor.darkGray)
-        dot_pen.setWidth(1)  # 1-pixel wide dots
+        dot_pen.setWidth(1)
         painter.setPen(dot_pen)
 
-        # Start positions based on panning
+        # Calculate starting positions for rendering the grid
         start_x = (center_x % self.grid_spacing) - self.grid_spacing
         start_y = (center_y % self.grid_spacing) - self.grid_spacing
 
+        # Draw grid dots across the viewport
         for x in range(start_x, self.width(), self.grid_spacing):
             for y in range(start_y, self.height(), self.grid_spacing):
                 if x == center_x and y == center_y:
-                    continue  # Don't draw center dot here, we'll draw it separately
-                painter.drawPoint(QPoint(x, y))  # 1-pixel dot
+                    continue  # Skip center dot, it will be drawn separately
+                painter.drawPoint(QPoint(x, y))  # 1-pixel dark gray dot
 
-        # Draw center dot (2px white)
+        # Draw the center dot (2px wide, white)
         center_dot_pen = QPen(Qt.GlobalColor.white)
-        center_dot_pen.setWidth(2)  # 2px wide center dot
+        center_dot_pen.setWidth(2)
         painter.setPen(center_dot_pen)
         painter.drawPoint(QPoint(center_x, center_y))
 
-        # Draw (0x0) label under the center dot
+        # Label the center dot with "(0x0)" slightly below it
         font = QFont()
         font.setPixelSize(8)
         painter.setFont(font)
         painter.drawText(center_x - 10, center_y + 12, "(0x0)")
 
     def mouseMoveEvent(self, event):
-        """Handles mouse dragging to pan the graph and navbar hover detection."""
-        if (
-            event.pos().y() < 20 or self.navbar.underMouse()
-        ):  # Show navbar when near top
+        # Handles panning and detects when the navbar should appear
+        if event.pos().y() < 20 or self.navbar.underMouse():
             self.show_navbar()
 
         if self.dragging:
@@ -150,18 +151,18 @@ class MovableViewport(QWidget):
             self.update()
 
     def mousePressEvent(self, event):
-        """Detects mouse press to start dragging."""
+        # Detects left mouse button press to start dragging
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = True
             self.last_mouse_pos = event.pos()
 
     def mouseReleaseEvent(self, event):
-        """Detects mouse release to stop dragging."""
+        # Stops dragging when the left mouse button is released
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
 
     def wheelEvent(self, event):
-        """Handles zooming in and out with the scroll wheel."""
+        # Handles zooming in and out by adjusting grid spacing
         angle = event.angleDelta().y()
         new_spacing = self.grid_spacing + (
             self.zoom_step if angle > 0 else -self.zoom_step
@@ -171,7 +172,7 @@ class MovableViewport(QWidget):
             self.update()
 
 
-# Entry point
+# Start the application
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MovableViewport()
