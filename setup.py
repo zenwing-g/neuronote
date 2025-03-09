@@ -27,12 +27,6 @@ def progress_bar(task_name, duration=5):
     print("] ✔")  # End progress bar
 
 
-# Install system packages (Linux/macOS only)
-progress_bar("Installing system dependencies")
-run_command(
-    "sudo apt update && sudo apt install -y sqlite3 sqlitebrowser || true"
-)  # Ignore errors on Windows/macOS
-
 # Create virtual environment
 if not os.path.exists("venv"):
     progress_bar("Creating virtual environment")
