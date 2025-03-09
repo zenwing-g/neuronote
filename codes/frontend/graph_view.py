@@ -1,4 +1,5 @@
 import sys
+import subprocess
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -12,9 +13,6 @@ from PyQt6.QtGui import QPainter, QBrush
 
 
 class MovableViewport(QWidget):
-    # Custom QWidget for a graphical viewport with a navigation bar.
-    # Supports panning with the mouse, zooming with the scroll wheel,
-    # and an auto-hiding navigation bar.
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Graph View")
@@ -36,6 +34,7 @@ class MovableViewport(QWidget):
         self.back_button = QPushButton("Back", self.navbar)
         self.back_button.setFixedSize(80, 40)
         self.back_button.setStyleSheet("font-size: 16px;")
+        self.back_button.clicked.connect(self.go_back)  # Connect back button
         navbar_layout.addWidget(self.back_button)
         navbar_layout.addStretch()
 
@@ -78,19 +77,24 @@ class MovableViewport(QWidget):
         self.update_canvas_size()
         self.center_viewport()
 
-    # Updates the canvas size based on the window dimensions.
+    def go_back(self):
+        """Closes the current window and runs start_view.py"""
+        subprocess.Popen(["python3", "start_view.py"])  # Run start_view.py
+        self.close()  # Close the current window
+
     def update_canvas_size(self):
+        """Updates the canvas size based on the window dimensions."""
         self.canvas_size = 10 * min(self.width(), self.height())
 
-    # Centers the viewport at the middle of the canvas.
     def center_viewport(self):
+        """Centers the viewport at the middle of the canvas."""
         self.offset = QPointF(
             self.canvas_size / 2 - self.width() / 2,
             self.canvas_size / 2 - self.height() / 2,
         )
 
-    # Handles painting the grid dots and background.
     def paintEvent(self, event):
+        """Handles painting the grid dots and background."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -105,31 +109,31 @@ class MovableViewport(QWidget):
             for y in range(start_y, self.height(), self.grid_spacing):
                 painter.drawEllipse(QPoint(x, y), self.dot_radius, self.dot_radius)
 
-    # Enables mouse tracking when the cursor enters the window.
     def enterEvent(self, event):
+        """Enables mouse tracking when the cursor enters the window."""
         self.setMouseTracking(True)
 
-    # Starts the navbar hide timer when the cursor leaves the window.
     def leaveEvent(self, event):
+        """Starts the navbar hide timer when the cursor leaves the window."""
         self.navbar_timer.start()
 
-    # Animates the navbar to slide into view.
     def show_navbar(self, event=None):
+        """Animates the navbar to slide into view."""
         self.navbar_animation.setStartValue(QRect(0, -50, self.width(), 50))
         self.navbar_animation.setEndValue(QRect(0, 0, self.width(), 50))
         self.navbar_animation.start()
         self.navbar_timer.stop()
 
-    # Animates the navbar to slide out of view.
     def hide_navbar(self):
+        """Animates the navbar to slide out of view."""
         if not self.navbar.underMouse():
             self.navbar_animation.setStartValue(QRect(0, 0, self.width(), 50))
             self.navbar_animation.setEndValue(QRect(0, -50, self.width(), 50))
             self.navbar_animation.start()
             self.navbar_timer.stop()
 
-    # Handles mouse movement for dragging and showing the navbar.
     def mouseMoveEvent(self, event):
+        """Handles mouse movement for dragging and showing the navbar."""
         if event.pos().y() < 20 or self.navbar.underMouse():
             self.show_navbar()
         if self.dragging:
@@ -138,19 +142,19 @@ class MovableViewport(QWidget):
             self.last_mouse_pos = event.pos()
             self.update()
 
-    # Detects mouse press to start dragging.
     def mousePressEvent(self, event):
+        """Detects mouse press to start dragging."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = True
             self.last_mouse_pos = event.pos()
 
-    # Detects mouse release to stop dragging.
     def mouseReleaseEvent(self, event):
+        """Detects mouse release to stop dragging."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
 
-    # Handles zooming in and out with the scroll wheel.
     def wheelEvent(self, event):
+        """Handles zooming in and out with the scroll wheel."""
         angle = event.angleDelta().y()
         new_spacing = self.grid_spacing + (
             self.zoom_step if angle > 0 else -self.zoom_step
@@ -159,8 +163,8 @@ class MovableViewport(QWidget):
             self.grid_spacing = new_spacing
             self.update()
 
-    # Adjusts viewport settings when the window is resized.
     def resizeEvent(self, event):
+        """Adjusts viewport settings when the window is resized."""
         self.update_canvas_size()
         self.center_viewport()
         self.navbar.setGeometry(0, -50, self.width(), 50)
