@@ -5,6 +5,8 @@ import time
 
 GREEN = "\033[92m"
 RED = "\033[91m"
+BLUE = "\033[34m"
+YELLOW = "\033[33m"
 RESET = "\033[0m"
 
 
@@ -22,7 +24,7 @@ def run_command(command, silent=True):
 def progress_bar(task_name, duration=5):
     """Displays a loading bar for the given task."""
     bar_length = 50
-    print(f"{task_name} [", end="", flush=True)
+    print(f"{YELLOW}{task_name}{RESET} [", end="", flush=True)
 
     for _ in range(bar_length):
         time.sleep(duration / 100)  # Faster but still visible progress
@@ -33,14 +35,15 @@ def progress_bar(task_name, duration=5):
 
 # Create virtual environment
 if not os.path.exists("venv"):
-    progress_bar("Creating virtual environment")
+    progress_bar("Creating virtual environment      ", duration=2)
     run_command("python -m venv venv")
 
-# Install Python dependencies inside venv silently
-progress_bar("Installing Python dependencies")
 run_command(
     "venv/bin/python -m pip install --upgrade pip pyqt6 pyqtgraph markdown2 || venv\\Scripts\\python.exe -m pip install --upgrade pip pyqt6 pyqtgraph markdown2"
 )
+
+# Install Python dependencies inside venv silently
+progress_bar("Installing Python dependencies    ")
 
 # Get the list of installed libraries
 installed_libraries = subprocess.run(
@@ -63,11 +66,11 @@ print(
 print(
     "\nTo activate the virtual environment, use the appropriate command for your OS:\n"
 )
-print("   For Linux/macOS (bash/zsh):")
+print(f"   {BLUE}For Linux/macOS (bash/zsh):{RESET}")
 print("     source venv/bin/activate\n")
-print("   For Windows (Command Prompt - CMD):")
+print(f"   {BLUE}For Windows (Command Prompt - CMD):{RESET}")
 print("     venv\\Scripts\\activate\n")
-print("   For Windows (PowerShell):")
+print(f"   {BLUE}For Windows (PowerShell):{RESET}")
 print("     venv\\Scripts\\Activate.ps1\n")
-print("   For Fish Shell:")
+print(f"   {BLUE}For Fish Shell:{RESET}")
 print("     source venv/bin/activate.fish\n")
