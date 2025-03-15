@@ -3,6 +3,7 @@ import sys
 import subprocess
 import time
 
+# Define ANSI color codes for colored terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"
 BLUE = "\033[34m"
@@ -11,7 +12,13 @@ RESET = "\033[0m"
 
 
 def run_command(command, silent=True):
-    """Runs a shell command silently in the background unless there's an error."""
+    """
+    Runs a shell command silently in the background unless there's an error.
+
+    Parameters:
+    - command (str): The shell command to execute.
+    - silent (bool): If True, suppresses output unless an error occurs.
+    """
     stdout_dest = subprocess.DEVNULL if silent else None
     stderr_dest = subprocess.DEVNULL if silent else None
 
@@ -22,7 +29,13 @@ def run_command(command, silent=True):
 
 
 def progress_bar(task_name, duration=5):
-    """Displays a loading bar for the given task."""
+    """
+    Displays a loading bar for the given task.
+
+    Parameters:
+    - task_name (str): The name of the task being executed.
+    - duration (int): Time in seconds for the progress bar animation.
+    """
     bar_length = 50
     print(f"{YELLOW}{task_name}{RESET} [", end="", flush=True)
 
@@ -33,19 +46,21 @@ def progress_bar(task_name, duration=5):
     print(f"] {GREEN}Success{RESET}")  # End progress bar
 
 
-# Create virtual environment
+# Check if virtual environment exists, if not, create one
 if not os.path.exists("venv"):
     progress_bar("Creating virtual environment      ", duration=2)
     run_command("python -m venv venv")
 
+# Install required dependencies inside the virtual environment (including Jinja2)
 run_command(
-    "venv/bin/python -m pip install --upgrade pip pyqt6 pyqtgraph markdown2 || venv\\Scripts\\python.exe -m pip install --upgrade pip pyqt6 pyqtgraph markdown2"
+    "venv/bin/python -m pip install --upgrade pip pyqt6 pyqtgraph markdown2 jinja2 || "
+    "venv\\Scripts\\python.exe -m pip install --upgrade pip pyqt6 pyqtgraph markdown2 jinja2"
 )
 
-# Install Python dependencies inside venv silently
+# Display progress bar for dependency installation
 progress_bar("Installing Python dependencies    ")
 
-# Get the list of installed libraries
+# Get the list of installed libraries in the virtual environment
 installed_libraries = subprocess.run(
     "venv/bin/python -m pip freeze || venv\\Scripts\\python.exe -m pip freeze",
     shell=True,
