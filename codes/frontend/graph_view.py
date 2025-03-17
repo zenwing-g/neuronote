@@ -10,7 +10,7 @@ from PyQt6.QtCore import (
     QPropertyAnimation,
     QEasingCurve,
 )
-from PyQt6.QtGui import QPainter, QBrush, QPen, QFont
+from PyQt6.QtGui import QMouseEvent, QPainter, QBrush, QPen, QFont
 
 # Add the root directory to sys.path to allow importing version information
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent.parent))
@@ -30,6 +30,8 @@ class MovableViewport(QWidget):
         self.navbar_timer = QTimer(self)
         self.navbar_timer.setInterval(500)
         self.navbar_timer.timeout.connect(self.hide_navbar)
+
+        self.labels = []
 
         # Navbar container
         self.navbar = QWidget(self)
@@ -110,25 +112,15 @@ class MovableViewport(QWidget):
     def mouseMoveEvent(self, event):
         if self.dragging:
             delta = event.pos() - self.last_mouse_pos
-            self.offset += QPointF(delta.x(), delta.y())
+            self.offset += QPointF(delta.x(), delta.y())  # Update viewport offset
             self.last_mouse_pos = event.pos()
+
+            # Move all labels based on updated offset
+            for label, rel_pos in self.labels:
+                label.move((self.offset + rel_pos).toPoint())
+
             self.update()
             return
-
-        # Show navbar when mouse is near the top
-        if event.pos().y() < 50:
-            self.show_navbar()
-        elif event.pos().y() > 50:
-            self.hide_navbar()
-
-        # Check hover for coordinate label
-        for (x, y), (rel_x, rel_y) in self.dot_positions.items():
-            if abs(event.pos().x() - x) <= 5 and abs(event.pos().y() - y) <= 5:
-                self.coord_label.setText(f"({rel_x}x{rel_y})")
-                self.coord_label.move(event.pos().x() + 10, event.pos().y() - 20)
-                self.coord_label.show()
-                return
-        self.coord_label.hide()
 
     def show_navbar(self):
         if not self.navbar_visible:
@@ -161,6 +153,26 @@ class MovableViewport(QWidget):
         x = self.width() - self.version_text.width() - margin
         y = self.height() - self.version_text.height() - margin
         self.version_text.move(x, y)
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragging = True
+            self.last_mouse_pos = event.pos()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragging = False
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        position = event.position()
+        relative_position = position - self.offset  # Store relative to offset
+
+        label = QLabel("Created now", self)
+        label.move(position.toPoint())
+        label.setStyleSheet("background-color: black; border: 1px solid white;")
+        label.show()
+
+        self.labels.append((label, relative_position))
 
 
 if __name__ == "__main__":
