@@ -10,4 +10,3 @@ def create_book(book_path):
     # Create links.csv inside the book_path
     links_file = book_path / "links.csv"
     links_file.touch(exist_ok=True)
-    print(f"{links_file} [NEW]")
