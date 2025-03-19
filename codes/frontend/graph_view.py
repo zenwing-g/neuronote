@@ -1,11 +1,10 @@
 import sys
 import pathlib
-from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QLabel
+from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QLabel
 from PyQt6.QtCore import (
     Qt,
     QPoint,
     QPointF,
-    QRect,
     QTimer,
     QPropertyAnimation,
     QEasingCurve,
@@ -20,7 +19,7 @@ from version import VERSION  # Import the version number
 class MovableViewport(QWidget):
     def __init__(self, book_name="Unknown Book"):
         super().__init__()
-        self.setWindowTitle("Graph View")
+        self.setWindowTitle(book_name)
         self.resize(800, 600)
         self.setMouseTracking(True)
         self.book_name = book_name
@@ -162,17 +161,6 @@ class MovableViewport(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
-
-    def mouseDoubleClickEvent(self, event: QMouseEvent):
-        position = event.position()
-        relative_position = position - self.offset  # Store relative to offset
-
-        label = QLabel("Created now", self)
-        label.move(position.toPoint())
-        label.setStyleSheet("background-color: black; border: 1px solid white;")
-        label.show()
-
-        self.labels.append((label, relative_position))
 
 
 if __name__ == "__main__":

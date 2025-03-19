@@ -15,11 +15,12 @@ if not book_dir.exists():
 else:
     print(book_dir)  # If it exists, just print the path.
 
-# JSON template for a page (stored as a constant since it doesn’t change).
+# JSON template for a page (fixed syntax)
 PAGE_TEMPLATE = """{
     "page_title": "{{ page_title }}",
     "page_id": "{{ page_id }}",
-    "page_content": {{ page_content | tojson }}
+    "page_content": {{ page_content | tojson }},
+    "page_location": {"x": {{ page_location.x }}, "y": {{ page_location.y }}}
 }"""
 
 # Ask the user for a page title.
@@ -42,11 +43,22 @@ def get_multiline_input():
     return "\n".join(lines)
 
 
+def get_page_location():
+    """Get the page's coordinates from user input."""
+    x_coordinate = int(input("X: "))
+    y_coordinate = int(input("Y: "))
+    return {"x": x_coordinate, "y": y_coordinate}  # Return as a dictionary
+
+
+# Get page location
+page_location = get_page_location()
+
 # Create a dictionary containing page data (title, ID, content).
 data = {
     "page_title": page_title,
     "page_id": create_id(),
     "page_content": get_multiline_input(),
+    "page_location": page_location,  # Store as a dictionary
 }
 
 # Render the JSON content using Jinja2 (fill in the template with actual values).
