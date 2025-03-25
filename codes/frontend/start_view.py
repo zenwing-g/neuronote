@@ -75,6 +75,7 @@ class StartWindow(QMainWindow):
         book_name = self.search_bar.text().strip()
         if book_name:
             self.graph_view = MovableViewport(book_name)
+            self.graph_view.loadPages(book_name)  # Load pages after opening the window
             self.graph_view.show()
 
     def show_dropdown(self, event):

@@ -1,5 +1,6 @@
 import sys
 import pathlib
+import json
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QLabel
 from PyQt6.QtCore import (
     Qt,
@@ -161,6 +162,48 @@ class MovableViewport(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
+
+    def loadPages(self, book_name):
+        book_path = pathlib.Path(f"../../storage/bag/{book_name}")
+        print(f"Loading pages from: {book_path}")
+
+        extension = ".json"
+        pages = list(book_path.glob(f"*{extension}"))
+
+        # Get the center of the viewport as the reference point
+        viewport_center_x = self.width() // 2
+        viewport_center_y = self.height() // 2
+
+        for page in pages:
+            print(f"Reading: {page.name}")
+            with page.open("r", encoding="utf-8") as node:
+                data = json.load(node)
+
+                node_title = data.get("page_title", "Untitled Page")
+                location_data = data.get("page_location", {"x": 0, "y": 0})
+
+                node_x = location_data.get("x", 0)
+                node_y = location_data.get("y", 0)
+
+                # Adjust position so (0,0) aligns with the viewport center
+                adjusted_x = viewport_center_x + node_x
+                adjusted_y = viewport_center_y - node_y  # Invert Y-axis if needed
+
+                print(
+                    f"Creating label '{node_title}' at adjusted ({adjusted_x}, {adjusted_y})"
+                )  # Debug
+
+                label = QLabel(node_title, self)
+                label.setStyleSheet(
+                    "color: white; background-color: black; border: 1px solid white; padding: 3px;"
+                )
+                label.adjustSize()
+                label.move(adjusted_x, adjusted_y)  # Move relative to viewport center
+                label.show()
+
+                self.labels.append((label, QPointF(adjusted_x, adjusted_y)))
+
+        self.update()  # Refresh UI
 
 
 if __name__ == "__main__":

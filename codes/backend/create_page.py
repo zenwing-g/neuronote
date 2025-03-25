@@ -45,8 +45,8 @@ def get_multiline_input():
 
 def get_page_location():
     """Get the page's coordinates from user input."""
-    x_coordinate = int(input("X: "))
-    y_coordinate = int(input("Y: "))
+    x_coordinate = int(input("X: ")) * 50
+    y_coordinate = int(input("Y: ")) * 50
     return {"x": x_coordinate, "y": y_coordinate}  # Return as a dictionary
 
 
