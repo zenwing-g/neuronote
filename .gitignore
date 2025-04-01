@@ -2,3 +2,6 @@ venv/
 storage/data/ids.csv
 storage/data/links.csv
 todo.md
+__pycache__/
+codes/backend/__pycache__/
+codes/frontend/__pycache__/
