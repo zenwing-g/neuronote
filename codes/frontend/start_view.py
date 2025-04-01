@@ -6,9 +6,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QVBoxLayout,
-    QWidget,
-    QScrollArea,
     QListWidget,
 )
 from PyQt6.QtCore import Qt

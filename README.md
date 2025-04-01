@@ -41,3 +41,13 @@ This approach helps in **structuring knowledge**, making it easier to **connect 
 > **NeuroNote is an offline-first, lightweight, and highly visual note-taking app that makes organizing and connecting ideas effortless. With a structured folder-based system, interactive graph visualization, and seamless Markdown support, it offers a unique way to manage and explore information.**
 
 ---
+
+### How to use
+
+- Opening the app greets you with the welcome screen which contains the logo a search bar and the open button.
+- Click on the search bar and a drop down menu appears with the list of books.
+- Select the required book and click on the open button.
+- This opens the selected book in the graph view where you can visualize your notes in the form of neural network.
+- Double click on the graph to create a new page. Things are set on auto-save.
+- Click and drag the sides of a page to form a link between the desired pages.
+- Left clicking on a page, link or the graph will give the respective functions available.
