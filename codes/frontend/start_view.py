@@ -75,6 +75,8 @@ class StartWindow(QMainWindow):
             self.graph_view.loadPages(book_name)  # Load pages after opening the window
             self.graph_view.show()
 
+        self.close()
+
     def show_dropdown(self, event):
         """Show dropdown list when search bar is focused."""
         self.dropdown_list.setGeometry(

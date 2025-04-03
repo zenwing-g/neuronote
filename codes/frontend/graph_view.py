@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import pathlib
 import json
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QLabel
@@ -49,6 +50,7 @@ class MovableViewport(QWidget):
         # Back button (default PyQt style)
         self.back_button = QPushButton("Back", self.navbar)
         self.back_button.setFixedSize(60, 30)
+        self.back_button.clicked.connect(self.open_start_view)
 
         # Book name label
         self.book_label = QLabel(self.book_name, self.navbar)
@@ -162,6 +164,11 @@ class MovableViewport(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
+
+    def open_start_view(self):
+        """Open start view and close graph view"""
+        subprocess.Popen(["python3", "start_view.py"])
+        self.close()
 
     def loadPages(self, book_name):
         book_path = pathlib.Path(f"../../storage/bag/{book_name}")
