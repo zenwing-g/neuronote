@@ -1,5 +1,7 @@
 # **NeuroNote**
 
+> <p style="color:red;"><strong>🚧 Still in production</strong></p>
+
 ## **Description**
 
 NeuroNote is an **innovative note-taking app** that structures information as a **network of interconnected notes**, rather than traditional linear documents.
