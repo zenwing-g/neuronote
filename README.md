@@ -27,7 +27,6 @@ This approach helps in **structuring knowledge**, making it easier to **connect 
 ### **📂 Backend (Data Storage & Management)**
 
 - **File-Based Storage** → Notes are stored as files inside structured folders
-- **SQLite3** → For storing metadata and relationships between notes
 - **CSV Files (`ids.csv`, `links.csv`)** → For managing note connections
 - **Python’s `os` & `pathlib`** → For file management
 

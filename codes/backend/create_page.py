@@ -1,4 +1,5 @@
 import json
+import string
 import jinja2
 import pathlib
 import re
@@ -20,7 +21,24 @@ PAGE_TEMPLATE = """{
     "page_title": "{{ page_title }}",
     "page_id": "{{ page_id }}",
     "page_content": {{ page_content | tojson }},
-    "page_location": {"x": {{ page_location.x }}, "y": {{ page_location.y }}}
+    "page_location": {"x": {{ page_location.x }}, "y": {{ page_location.y }}},
+    "page_style": {
+        "color": "{{ page_style.color }}",                     // Text color
+        "font_size": "{{ page_style.font_size }}",             // Size of the text
+        "font_family": "{{ page_style.font_family }}",         // Font family (e.g., Arial, Courier)
+        "font_weight": "{{ page_style.font_weight }}",         // Boldness (normal, bold, 100–900)
+        "font_style": "{{ page_style.font_style }}",           // Normal, italic, or oblique
+        "text_decoration": "{{ page_style.text_decoration }}", // Underline, line-through, etc.
+        
+        "padding": "{{ page_style.padding }}",                 // Space inside the label around text
+        "border": "{{ page_style.border }}",                   // Complete border declaration
+        "border_radius": "{{ page_style.border_radius }}",     // Rounded corners
+        "border_style": "{{ page_style.border_style }}",       // Border type (solid, dashed, etc.)
+        "border_width": "{{ page_style.border_width }}",       // Border thickness
+        "border_color": "{{ page_style.border_color }}",       // Border color
+        
+        "background_color": "{{ page_style.background_color }}" // Background fill color
+    }
 }"""
 
 # Ask the user for a page title.
@@ -50,15 +68,51 @@ def get_page_location():
     return {"x": x_coordinate, "y": y_coordinate}  # Return as a dictionary
 
 
+def get_page_style(
+    color: str = "white",
+    font_size: int = 14,
+    font_family: str = "Arial",
+    font_weight: int = 400,
+    font_style: str = "normal",
+    text_decoration: str = "none",
+    padding: int = 7,
+    border: str = "1px solid white",
+    border_radius: int = 10,
+    border_style: str = "solid",
+    border_width: int = 2,
+    border_color: str = "white",
+    background_color: str = "black",
+):
+    return {
+        "color": color,
+        "font_size": font_size,
+        "font_family": font_family,
+        "font_weight": font_weight,
+        "font_style": font_style,
+        "text_decoration": text_decoration,
+        "padding": padding,
+        "border": border,
+        "border_radius": border_radius,
+        "border_style": border_style,
+        "border_width": border_width,
+        "border_color": border_color,
+        "background_color": background_color,
+    }
+
+
 # Get page location
 page_location = get_page_location()
 
-# Create a dictionary containing page data (title, ID, content).
+# Get page style
+page_style = get_page_style()
+
+# Create a dictionary containing page data (title, ID, content, location, style)
 data = {
     "page_title": page_title,
     "page_id": create_id(),
     "page_content": get_multiline_input(),
-    "page_location": page_location,  # Store as a dictionary
+    "page_location": page_location,
+    "page_style": page_style,
 }
 
 # Render the JSON content using Jinja2 (fill in the template with actual values).
@@ -68,4 +122,4 @@ json_content = jinja2.Template(PAGE_TEMPLATE).render(data)
 with page_path.open("w", encoding="utf-8") as file:
     file.write(json_content)
 
-print(f"Page saved successfully as {page_path}")  # Confirmation message.
+print(f"Page saved successfully as {page_path}")

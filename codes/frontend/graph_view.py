@@ -200,15 +200,22 @@ class MovableViewport(QWidget):
                     f"Creating label '{node_title}' at adjusted ({adjusted_x}, {adjusted_y})"
                 )  # Debug
 
-                label = QLabel(node_title, self)
-                label.setStyleSheet(
-                    "color: white; background-color: black; border: 1px solid white; padding: 3px;"
+                style_dictionary = data.get("page_style")
+                style_string = "; ".join(
+                    f"{k.replace('_', '-')}: {v}" for k, v in style_dictionary.items()
                 )
+                label = QLabel(node_title, self)
+                label.setStyleSheet(style_string)
                 label.adjustSize()
                 label.move(adjusted_x, adjusted_y)  # Move relative to viewport center
                 label.show()
 
                 self.labels.append((label, QPointF(adjusted_x, adjusted_y)))
+
+        def mouseDoubleClickEvent(self, event):
+            if event.button() == Qt.LeftButton:
+                self.setText("Clicked")
+            super().mouseDoubleClickEvent(event)
 
         self.update()  # Refresh UI
 
