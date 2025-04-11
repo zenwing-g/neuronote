@@ -1,21 +1,15 @@
+# graph_view.py
+
 import sys
 import subprocess
 import pathlib
 import json
-from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QLabel
-from PyQt6.QtCore import (
-    Qt,
-    QPoint,
-    QPointF,
-    QTimer,
-    QPropertyAnimation,
-    QEasingCurve,
-)
-from PyQt6.QtGui import QMouseEvent, QPainter, QBrush, QPen, QFont
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton
+from PyQt6.QtCore import Qt, QPoint, QPointF, QTimer, QPropertyAnimation, QEasingCurve
+from PyQt6.QtGui import QPainter, QBrush, QPen, QFont, QMouseEvent
 
-# Add the root directory to sys.path to allow importing version information
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent.parent))
-from version import VERSION  # Import the version number
+from version import VERSION
 
 
 class MovableViewport(QWidget):
@@ -23,66 +17,57 @@ class MovableViewport(QWidget):
         super().__init__()
         self.setWindowTitle(book_name)
         self.resize(800, 600)
-        self.setMouseTracking(True)
         self.book_name = book_name
+        self.setMouseTracking(True)
 
-        # Navbar visibility tracking
-        self.navbar_visible = False
-        self.navbar_timer = QTimer(self)
-        self.navbar_timer.setInterval(500)
-        self.navbar_timer.timeout.connect(self.hide_navbar)
+        self.offset = QPointF(0, 0)
+        self.dragging = False
+        self.last_mouse_pos = QPoint()
 
+        self.grid_spacing = 50
+        self.dot_positions = {}
         self.labels = []
 
-        # Navbar container
+        self.init_ui()
+
+    def init_ui(self):
+        self.version_text = QLabel(f"{VERSION}", self)
+        self.version_text.setStyleSheet("color: gray; font-size: 10px;")
+
+        self.coord_label = QLabel(self)
+        self.coord_label.setStyleSheet(
+            "color: white; background-color: black; padding: 2px; border-radius: 3px;"
+        )
+        self.coord_label.setFont(QFont("", 9))
+        self.coord_label.hide()
+
         self.navbar = QWidget(self)
         self.navbar.setStyleSheet(
             "background-color: black; border: 2px solid white; border-radius: 8px;"
         )
         self.navbar.setFixedHeight(40)
-        self.navbar.move(0, -40)  # Start hidden above the window
+        self.navbar.move(0, -40)
 
-        # Animation for navbar
+        self.navbar_visible = False
+        self.navbar_timer = QTimer(self)
+        self.navbar_timer.setInterval(500)
+        self.navbar_timer.timeout.connect(self.hide_navbar)
+
         self.navbar_animation = QPropertyAnimation(self.navbar, b"pos")
-        self.navbar_animation.setDuration(200)  # Smooth animation
+        self.navbar_animation.setDuration(200)
         self.navbar_animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
 
-        # Back button (default PyQt style)
         self.back_button = QPushButton("Back", self.navbar)
         self.back_button.setFixedSize(60, 30)
         self.back_button.clicked.connect(self.open_start_view)
 
-        # Book name label
         self.book_label = QLabel(self.book_name, self.navbar)
         self.book_label.setStyleSheet(
             "color: white; font-size: 14px; background: none;"
         )
         self.book_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Coordinate label
-        self.coord_label = QLabel(self)
-        self.coord_label.setStyleSheet(
-            "color: white; background-color: black; padding: 2px; border-radius: 3px;"
-        )
-        font = QFont()
-        font.setPixelSize(9)
-        self.coord_label.setFont(font)
-        self.coord_label.hide()
-
-        # Panning variables
-        self.dragging = False
-        self.last_mouse_pos = QPoint()
-
-        # Grid settings
-        self.grid_spacing = 50
-        self.offset = QPointF(0, 0)
-
-        # Store dot positions
-        self.dot_positions = {}
-
-        # Version label
-        self.version_text = QLabel(f"{VERSION}", self)
-        self.version_text.setStyleSheet("color: gray; font: 10px;")
+        self.adjust_navbar()
         self.update_version_position()
 
     def paintEvent(self, event):
@@ -90,44 +75,57 @@ class MovableViewport(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.fillRect(self.rect(), QBrush(Qt.GlobalColor.black))
 
-        # Get center position
         center_x = self.width() // 2 + int(self.offset.x())
         center_y = self.height() // 2 + int(self.offset.y())
 
-        # Store dot positions
         self.dot_positions.clear()
-        start_x = (center_x % self.grid_spacing) - self.grid_spacing
-        start_y = (center_y % self.grid_spacing) - self.grid_spacing
-
-        for x in range(start_x, self.width(), self.grid_spacing):
-            for y in range(start_y, self.height(), self.grid_spacing):
-                rel_x = (x - center_x) // self.grid_spacing
-                rel_y = (center_y - y) // self.grid_spacing
-                self.dot_positions[(x, y)] = (rel_x, rel_y)
+        for x in range(
+            (center_x % self.grid_spacing) - self.grid_spacing,
+            self.width(),
+            self.grid_spacing,
+        ):
+            for y in range(
+                (center_y % self.grid_spacing) - self.grid_spacing,
+                self.height(),
+                self.grid_spacing,
+            ):
                 painter.setPen(QPen(Qt.GlobalColor.darkGray, 1))
                 painter.drawPoint(QPoint(x, y))
 
-        # Draw center dot
         painter.setPen(QPen(Qt.GlobalColor.white, 2))
         painter.drawPoint(QPoint(center_x, center_y))
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent):
         if self.dragging:
             delta = event.pos() - self.last_mouse_pos
-            self.offset += QPointF(delta.x(), delta.y())  # Update viewport offset
+            self.offset += QPointF(delta.x(), delta.y())
             self.last_mouse_pos = event.pos()
-
-            # Move all labels based on updated offset
             for label, rel_pos in self.labels:
                 label.move((self.offset + rel_pos).toPoint())
-
             self.update()
-            return
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragging = True
+            self.last_mouse_pos = event.pos()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragging = False
+
+    def resizeEvent(self, event):
+        self.adjust_navbar()
+        self.update_version_position()
+        super().resizeEvent(event)
+
+    def adjust_navbar(self):
+        self.navbar.setGeometry(0, 0, self.width(), 40)
+        self.back_button.move(10, 5)
+        self.book_label.setGeometry((self.width() // 2) - 100, 5, 200, 30)
 
     def show_navbar(self):
         if not self.navbar_visible:
             self.navbar_visible = True
-            self.adjust_navbar()
             self.navbar_animation.setStartValue(self.navbar.pos())
             self.navbar_animation.setEndValue(QPoint(0, 0))
             self.navbar_animation.start()
@@ -139,90 +137,52 @@ class MovableViewport(QWidget):
             self.navbar_animation.setEndValue(QPoint(0, -40))
             self.navbar_animation.start()
 
-    def adjust_navbar(self):
-        self.navbar.setGeometry(0, 0, self.width(), 40)
-        self.back_button.move(10, 5)
-        self.book_label.setGeometry((self.width() // 2) - 100, 5, 200, 30)
-
-    def resizeEvent(self, event):
-        self.update_version_position()
-        self.adjust_navbar()
-        super().resizeEvent(event)
-
     def update_version_position(self):
-        margin = 5
         self.version_text.adjustSize()
-        x = self.width() - self.version_text.width() - margin
-        y = self.height() - self.version_text.height() - margin
-        self.version_text.move(x, y)
-
-    def mousePressEvent(self, event: QMouseEvent):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.dragging = True
-            self.last_mouse_pos = event.pos()
-
-    def mouseReleaseEvent(self, event: QMouseEvent):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.dragging = False
+        self.version_text.move(
+            self.width() - self.version_text.width() - 5,
+            self.height() - self.version_text.height() - 5,
+        )
 
     def open_start_view(self):
-        """Open start view and close graph view"""
         subprocess.Popen(["python3", "start_view.py"])
         self.close()
 
     def loadPages(self, book_name):
         book_path = pathlib.Path(f"../../storage/bag/{book_name}")
-        print(f"Loading pages from: {book_path}")
+        if not book_path.exists():
+            return
 
-        extension = ".json"
-        pages = list(book_path.glob(f"*{extension}"))
+        center_x = self.width() // 2
+        center_y = self.height() // 2
 
-        # Get the center of the viewport as the reference point
-        viewport_center_x = self.width() // 2
-        viewport_center_y = self.height() // 2
+        for page in book_path.glob("*.json"):
+            with page.open("r", encoding="utf-8") as f:
+                data = json.load(f)
 
-        for page in pages:
-            print(f"Reading: {page.name}")
-            with page.open("r", encoding="utf-8") as node:
-                data = json.load(node)
+            title = data.get("page_title", "Untitled")
+            pos = data.get("page_location", {"x": 0, "y": 0})
+            style = data.get("page_style", {})
 
-                node_title = data.get("page_title", "Untitled Page")
-                location_data = data.get("page_location", {"x": 0, "y": 0})
+            label = QLabel(title, self)
+            style_string = "; ".join(
+                f"{k.replace('_', '-')}: {v}" for k, v in style.items()
+            )
+            label.setStyleSheet(style_string)
+            label.adjustSize()
 
-                node_x = location_data.get("x", 0)
-                node_y = location_data.get("y", 0)
+            x = center_x + pos.get("x", 0)
+            y = center_y - pos.get("y", 0)
+            label.move(x, y)
+            label.show()
 
-                # Adjust position so (0,0) aligns with the viewport center
-                adjusted_x = viewport_center_x + node_x
-                adjusted_y = viewport_center_y - node_y  # Invert Y-axis if needed
+            self.labels.append((label, QPointF(x, y)))
 
-                print(
-                    f"Creating label '{node_title}' at adjusted ({adjusted_x}, {adjusted_y})"
-                )  # Debug
-
-                style_dictionary = data.get("page_style")
-                style_string = "; ".join(
-                    f"{k.replace('_', '-')}: {v}" for k, v in style_dictionary.items()
-                )
-                label = QLabel(node_title, self)
-                label.setStyleSheet(style_string)
-                label.adjustSize()
-                label.move(adjusted_x, adjusted_y)  # Move relative to viewport center
-                label.show()
-
-                self.labels.append((label, QPointF(adjusted_x, adjusted_y)))
-
-        def mouseDoubleClickEvent(self, event):
-            if event.button() == Qt.LeftButton:
-                self.setText("Clicked")
-            super().mouseDoubleClickEvent(event)
-
-        self.update()  # Refresh UI
+        self.update()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    book_name = "Example Book"  # Replace with actual book name from start_view.py
-    window = MovableViewport(book_name)
-    window.show()
+    view = MovableViewport("Example Book")
+    view.show()
     sys.exit(app.exec())

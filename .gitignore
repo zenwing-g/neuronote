@@ -1,7 +1,7 @@
 venv/
-storage/data/ids.csv
-storage/data/links.csv
-todo.md
 __pycache__/
-codes/backend/__pycache__/
-codes/frontend/__pycache__/
+*.py[cod]
+**/__pycache__/
+storage/data/*.csv
+storage/bag/*/links.csv
+todo.md

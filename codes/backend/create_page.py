@@ -16,28 +16,26 @@ if not book_dir.exists():
 else:
     print(book_dir)  # If it exists, just print the path.
 
-# JSON template for a page (fixed syntax)
+# JSON template for a page
 PAGE_TEMPLATE = """{
     "page_title": "{{ page_title }}",
     "page_id": "{{ page_id }}",
     "page_content": {{ page_content | tojson }},
     "page_location": {"x": {{ page_location.x }}, "y": {{ page_location.y }}},
     "page_style": {
-        "color": "{{ page_style.color }}",                     // Text color
-        "font_size": "{{ page_style.font_size }}",             // Size of the text
-        "font_family": "{{ page_style.font_family }}",         // Font family (e.g., Arial, Courier)
-        "font_weight": "{{ page_style.font_weight }}",         // Boldness (normal, bold, 100–900)
-        "font_style": "{{ page_style.font_style }}",           // Normal, italic, or oblique
-        "text_decoration": "{{ page_style.text_decoration }}", // Underline, line-through, etc.
-        
-        "padding": "{{ page_style.padding }}",                 // Space inside the label around text
-        "border": "{{ page_style.border }}",                   // Complete border declaration
-        "border_radius": "{{ page_style.border_radius }}",     // Rounded corners
-        "border_style": "{{ page_style.border_style }}",       // Border type (solid, dashed, etc.)
-        "border_width": "{{ page_style.border_width }}",       // Border thickness
-        "border_color": "{{ page_style.border_color }}",       // Border color
-        
-        "background_color": "{{ page_style.background_color }}" // Background fill color
+        "color": "{{ page_style.color }}",
+        "font_size": "{{ page_style.font_size }}",
+        "font_family": "{{ page_style.font_family }}",
+        "font_weight": "{{ page_style.font_weight }}",
+        "font_style": "{{ page_style.font_style }}",
+        "text_decoration": "{{ page_style.text_decoration }}",
+        "padding": "{{ page_style.padding }}",
+        "border": "{{ page_style.border }}",
+        "border_radius": "{{ page_style.border_radius }}",
+        "border_style": "{{ page_style.border_style }}",
+        "border_width": "{{ page_style.border_width }}",
+        "border_color": "{{ page_style.border_color }}",
+        "background_color": "{{ page_style.background_color }}"
     }
 }"""
 
@@ -65,7 +63,7 @@ def get_page_location():
     """Get the page's coordinates from user input."""
     x_coordinate = int(input("X: ")) * 50
     y_coordinate = int(input("Y: ")) * 50
-    return {"x": x_coordinate, "y": y_coordinate}  # Return as a dictionary
+    return {"x": x_coordinate, "y": y_coordinate}
 
 
 def get_page_style(
@@ -83,18 +81,19 @@ def get_page_style(
     border_color: str = "white",
     background_color: str = "black",
 ):
+    """Returns a dictionary of styles with proper CSS units."""
     return {
         "color": color,
-        "font_size": font_size,
+        "font_size": f"{font_size}px",
         "font_family": font_family,
-        "font_weight": font_weight,
+        "font_weight": str(font_weight),
         "font_style": font_style,
         "text_decoration": text_decoration,
-        "padding": padding,
-        "border": border,
-        "border_radius": border_radius,
+        "padding": f"{padding}px",
+        "border": border,  # Full border string like "1px solid white"
+        "border_radius": f"{border_radius}px",
         "border_style": border_style,
-        "border_width": border_width,
+        "border_width": f"{border_width}px",
         "border_color": border_color,
         "background_color": background_color,
     }
@@ -122,4 +121,4 @@ json_content = jinja2.Template(PAGE_TEMPLATE).render(data)
 with page_path.open("w", encoding="utf-8") as file:
     file.write(json_content)
 
-print(f"Page saved successfully as {page_path}")
+print(f"✅ Page saved successfully as {page_path}")
