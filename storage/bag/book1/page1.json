@@ -1,6 +1,21 @@
 {
-    "page_title": "page1",
-    "page_id": "3w9r7n",
-    "page_content": "pageeee!",
-    "page_location": {"x": 0, "y": 0}
+  "page_title": "page1",
+  "page_id": "axui8s",
+  "page_content": "# Mitochondria\n\nIt is the powerhouse of the cell.",
+  "page_location": { "x": 0, "y": 0 },
+  "page_style": {
+    "color": "white",
+    "font_size": "14px",
+    "font_family": "Arial",
+    "font_weight": "400",
+    "font_style": "normal",
+    "text_decoration": "none",
+    "padding": "7px",
+    "border": "1px solid white",
+    "border_radius": "10px",
+    "border_style": "solid",
+    "border_width": "2px",
+    "border_color": "white",
+    "background_color": "black"
+  }
 }

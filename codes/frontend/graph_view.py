@@ -4,9 +4,10 @@ import sys
 import subprocess
 import pathlib
 import json
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QTextBrowser
 from PyQt6.QtCore import Qt, QPoint, QPointF, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QPainter, QBrush, QPen, QFont, QMouseEvent
+import markdown
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parent.parent.parent))
 from version import VERSION
@@ -160,11 +161,23 @@ class MovableViewport(QWidget):
             with page.open("r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            title = data.get("page_title", "Untitled")
             pos = data.get("page_location", {"x": 0, "y": 0})
             style = data.get("page_style", {})
+            raw_content = data.get("page_content", "")
 
-            label = QLabel(title, self)
+            # If content is double-encoded JSON string
+            if isinstance(raw_content, str):
+                try:
+                    raw_content = json.loads(raw_content)
+                except json.JSONDecodeError:
+                    pass
+
+            content_render = markdown.markdown(raw_content)
+
+            label = QTextBrowser(self)
+            label.setHtml(content_render)
+            label.setOpenExternalLinks(True)
+
             style_string = "; ".join(
                 f"{k.replace('_', '-')}: {v}" for k, v in style.items()
             )
